@@ -217,3 +217,6 @@ At the start of a session, read `dev-log.md` (latest entry) and `00-overview.md`
 - OCR misreads are common at low contrast — prefer toggles' pixel-color state checks where text is unreliable.
 - Slot positions on the home screen are fixed, but which app occupies which slot varies per device → always detect via OCR, never assume.
 - "Remove" on home screen removes the shortcut only; "Uninstall" removes the app. The pipeline's intent for stages 1–2 is shortcut removal/home cleanup.
+
+
+-참고: `py 코드/main.cpp`는 예전 동작 버전 백업이야. 실제 빌드/플래시되는 펌웨어는 src/main.cpp 하나뿐이니 앞으로 펌웨어 작업은 src/main.cpp만 건드려. py 코드 폴더는 무시해도 돼.
