@@ -1,0 +1,5 @@
+COM_PORT   = "COM7"
+BAUD_RATE  = 115200
+STREAM_URL = "http://192.168.1.205:8080/video"
+BASE_URL   = "http://192.168.1.205:8080"
+OCR_CONF   = 0.4

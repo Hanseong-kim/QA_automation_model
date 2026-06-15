@@ -6,5 +6,3 @@ captures/
 
 *.json
 !ymap.json
-qa_report.json
-EOF

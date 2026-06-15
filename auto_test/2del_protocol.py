@@ -17,13 +17,15 @@ delete_protocol.py - 포커스 잠금 + Radius 제외 앱 삭제 (비전 기반,
 
 실행: python delete_protocol.py
 """
-import cv2, numpy as np, serial, time, easyocr, re, requests, threading
-from difflib import SequenceMatcher
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-COM_PORT = "COM7"
-BASE_URL = "http://192.168.1.205:8080"     # IP Webcam 베이스 주소 (/video 없이)
-STREAM_URL = f"{BASE_URL}/video"           # 라이브 스트림
-OCR_CONF = 0.4
+import cv2, numpy as np, re, requests, time
+from difflib import SequenceMatcher
+from lib.config import COM_PORT, BASE_URL, STREAM_URL, OCR_CONF
+from lib.esp import init, send, close
+from lib.vision import StreamGrabber, reader
+
 FUZZY = 0.72                               # 앱이름 퍼지매칭 임계값
 
 # 슬롯 ESP 롱프레스 좌표 (왼쪽->오른쪽 순서)
@@ -42,11 +44,15 @@ SKIP = "Radius"   # 삭제 안 할 앱
 APP_KEYWORDS = {"radius":"Radius", "knox":"Knox Remote", "files":"Files", "chrome":"Chrome"}
 BG_TOUCH = (500, 500)
 
-ser = serial.Serial(COM_PORT, 115200, timeout=1)
-time.sleep(2); ser.reset_input_buffer()
+init()
 print("연결됨")
-print("EasyOCR 로딩...")
-reader = easyocr.Reader(['en'])
+
+grabber = StreamGrabber(STREAM_URL)
+time.sleep(1.0)   # 스레드가 첫 프레임 채울 시간
+
+def cleanup():
+    grabber.release()
+    close()
 
 # ───────── 포커스 (IP Webcam HTTP API) ─────────
 def cam(path, **params):
@@ -64,53 +70,6 @@ def lock_focus():
     except Exception as e:
         print(f"[경고] 포커스 제어 실패: {e}  (현재 초점 상태로 진행)")
         return False
-
-# ───────── 라이브 스트림 그래버 (스레드) ─────────
-class StreamGrabber:
-    """백그라운드 스레드로 스트림을 계속 읽으며 '가장 최신 완전 프레임'만 보관."""
-    def __init__(self, url):
-        self.cap = cv2.VideoCapture(url)
-        self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-        self.frame = None
-        self.lock = threading.Lock()
-        self.running = True
-        threading.Thread(target=self._loop, daemon=True).start()
-
-    def _loop(self):
-        while self.running:
-            ret, f = self.cap.read()
-            if ret and f is not None and f.size > 0:
-                with self.lock:
-                    self.frame = f
-            else:
-                time.sleep(0.005)
-
-    def read(self):
-        with self.lock:
-            return None if self.frame is None else self.frame.copy()
-
-    def release(self):
-        self.running = False
-        time.sleep(0.05)
-        self.cap.release()
-
-grabber = StreamGrabber(STREAM_URL)
-time.sleep(1.0)   # 스레드가 첫 프레임 채울 시간
-
-def cleanup():
-    grabber.release()
-    ser.close()
-
-# ───────── ESP 통신 ─────────
-def send(cmd, wait=1.5, timeout=12):
-    print(f"  전송: {cmd}")
-    ser.reset_input_buffer()
-    ser.write((cmd+"\n").encode())
-    t0=time.time()
-    while time.time()-t0<timeout:
-        if ser.readline().decode(errors="ignore").strip()=="DONE":
-            time.sleep(wait); return True
-    print("  시간초과"); return False
 
 def match_app(text):
     t = text.lower().strip()

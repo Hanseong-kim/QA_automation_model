@@ -5,9 +5,9 @@ setting이랑 playstore만 삭제
 좌표는 모두 좌하단 기준(LONGPRESS / CLICK).
 
 """
-import serial, time
-
-COM_PORT = "COM7"
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from lib.esp import init, send, close
 
 # (이름, 앱 롱프레스 좌표, Remove 클릭 좌표)
 APPS = [
@@ -21,22 +21,8 @@ APPS = [
 
 BG_TOUCH = (500, 500)   # 삭제 후 배경 터치 (메뉴 닫기)
 
-ser = serial.Serial(COM_PORT, 115200, timeout=1)
-time.sleep(2); ser.reset_input_buffer()
+init()
 print("연결됨\n")
-
-def send(cmd, wait=2, timeout=12):
-    print(f"  전송: {cmd}")
-    ser.reset_input_buffer()
-    ser.write((cmd + '\n').encode())
-    deadline = time.time() + timeout
-    while time.time() < deadline:
-        line = ser.readline().decode(errors="ignore").strip()
-        if line == "DONE":
-            time.sleep(wait)
-            return True
-    print("  -> 시간초과")
-    return False
 
 def delete_app(name, app_pos, remove_pos):
     print(f"\n=== '{name}' 삭제 ===")
@@ -57,7 +43,7 @@ def main():
     for name, app_pos, remove_pos in APPS:
         delete_app(name, app_pos, remove_pos)
     print("\n=== 전체 완료 ===")
-    ser.close()
+    close()
 
 if __name__ == "__main__":
     main()
