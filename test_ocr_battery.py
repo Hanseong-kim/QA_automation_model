@@ -11,7 +11,7 @@ import sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import cv2
-from lib.vision import reader
+from lib.vision import ocr_readtext
 from lib.config import OCR_CONF
 
 IMAGES = {
@@ -30,7 +30,7 @@ def ocr_from_file(path: str) -> list:
         return []
     rot = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
     results = []
-    for (bbox, text, conf) in reader.readtext(rot):
+    for (bbox, text, conf) in ocr_readtext(rot):
         results.append((text, conf))
     return results
 

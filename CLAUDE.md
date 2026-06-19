@@ -220,3 +220,22 @@ At the start of a session, read `dev-log.md` (latest entry) and `00-overview.md`
 
 
 -참고: `py 코드/main.cpp`는 예전 동작 버전 백업이야. 실제 빌드/플래시되는 펌웨어는 src/main.cpp 하나뿐이니 앞으로 펌웨어 작업은 src/main.cpp만 건드려. py 코드 폴더는 무시해도 돼.
+
+## Claude Code 작업 규칙
+
+### 실기기 실행은 사용자가 직접
+- `run_qa.py`, `probe.py` 등 실기기 연결 스크립트는 Claude Code가 실행하지 않는다.
+- COM7(ESP32 시리얼)과 IP Webcam 카메라는 Claude Code 환경에서 접근 불가.
+- Claude Code의 역할은 코드 작성 + 문법 검증(`.\venv\Scripts\python.exe -m py_compile <file>`)까지. "실행해서 확인해봐"는 하지 않는다.
+
+### Python 인터프리터
+- 항상 `.\venv\Scripts\python.exe` 사용. 시스템 `python`에는 `cv2`, `easyocr`, `pyserial` 등이 없다.
+- py_compile 검증 명령: `.\venv\Scripts\python.exe -m py_compile <파일>`
+
+### 좌표·키 시퀀스·임계값 보호
+- 검증된 좌표, 키 시퀀스, OCR 임계값(RADIO_X_OFFSET, ON_PIX_RATIO 등)은 파일 상단 상수 블록에 보존한다.
+- 동작하는 코드는 요청 없이 리팩토링하지 않는다. 버그 수정 범위를 넘는 구조 변경은 하지 않는다.
+
+### 변경 전 plan 먼저
+- 여러 함수·파일에 걸친 변경은 코드를 건드리기 전에 변경 계획(어느 함수, 무엇을, 왜)을 먼저 제시한다.
+- 큰 변경(새 스테이지 추가, 모듈 재설계 등)은 계획을 확인받은 뒤 코드를 작성한다. 확인 전에 실행하지 않는다.
