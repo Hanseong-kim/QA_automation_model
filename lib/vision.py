@@ -16,8 +16,15 @@ def ocr_readtext(img):
 
     롤백 시 이 함수만 교체:
         return reader.readtext(img)    # EasyOCR 버전
+
+    깨진 mjpeg 프레임이 들어오면 onnxruntime이 추론 중 예외를 던져 전체 실행이
+    중단된다(mjpeg overread). 예외를 흡수해 빈 결과로 처리 → 해당 1회만 스킵.
     """
-    results, _ = reader(img)
+    try:
+        results, _ = reader(img)
+    except Exception as e:
+        print(f"  [OCR] 추론 실패(프레임 손상 추정) — 스킵: {e}")
+        return []
     if results is None:
         return []
     return [(item[0], item[1], float(item[2])) for item in results]

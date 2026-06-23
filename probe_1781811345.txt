@@ -1,1 +1,0 @@
-TYPE:Show battery percentage → KEY:ENTER → KEY:ENTER → KEY:ENTER → KEY:ENTER

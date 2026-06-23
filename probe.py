@@ -31,7 +31,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from lib.esp import init as init_esp, close as close_esp, send
 from lib.vision import init_camera, grab, grab_fresh, reconnect
 from lib.config import STREAM_URL
-from lib.qa import read_screen_text, open_settings, settings_search
+from lib.qa import read_screen_text, open_settings, settings_search, SEARCH_CLEAR_CLICK
 
 CAPTURE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "captures", "probe")
 
@@ -92,6 +92,7 @@ def main():
         print("\n연결됨. (카메라 OFF — s/goto/search 화면확인은 카메라 필요)")
         print("  카메라 쓰려면: python probe.py cam")
     print("명령: t/e/le/u/d/l/r=키, b=뒤로가기, home=홈으로, s=화면확인, c [라벨]=jpg저장,")
+    print("      m x y=MOVE, c x y=CLICK(숫자2개), remove=검색어 지우기(X버튼),")
     print("      type <텍스트>, swipe x1,y1,x2,y2, goto=Settings진입, search <키워드>, h=히스토리, q=종료\n")
 
     try:
@@ -105,6 +106,25 @@ def main():
             # 히스토리 출력
             if raw == 'h':
                 print("  히스토리:", " → ".join(history) if history else "(없음)")
+                continue
+
+            # remove: 검색창 X(지우기) 버튼 클릭 (qa between의 remove 단계)
+            if raw == 'remove':
+                print(f"  [remove] {SEARCH_CLEAR_CLICK} (검색어 지움)")
+                send(SEARCH_CLEAR_CLICK, wait=0)
+                history.append("[remove]")
+                continue
+
+            # 절대좌표 MOVE/CLICK (calibrate.py m/c 포팅) — 좌표 탐색용 (예: remove 버튼 찾기)
+            # 'c x y'(숫자 2개)는 클릭, 'c'/'c <라벨>'은 아래 화면캡처로 분기
+            _p = raw.split()
+            if (len(_p) == 3 and _p[0] in ('m', 'c')
+                    and _p[1].lstrip('-').isdigit() and _p[2].lstrip('-').isdigit()):
+                x, y = _p[1], _p[2]
+                op = "MOVE" if _p[0] == 'm' else "CLICK"
+                print(f"  [{_p[0]}] {op}:{x},{y}")
+                send(f"{op}:{x},{y}", wait=0)
+                history.append(f"{op}:{x},{y}")
                 continue
 
             # 화면 확인 (카메라 필요)
